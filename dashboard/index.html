@@ -1,0 +1,878 @@
+<title>Liferusher Daybook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --paper:#F5F4F0;
+  --surface:#FBFAF6;
+  --sunken:#EEEDE7;
+  --ink:#1B1E26;
+  --muted:#6C7180;
+  --faint:#9A9EAA;
+  --rule:#DEDBD2;
+  --rule-soft:#E9E7E0;
+  --accent:#2C4BA0;
+  --accent-soft:#E2E6F3;
+  --marker:#B0801F;
+  --good:#3F7D53;
+  --crit:#AA4438;
+
+  --f-display:"Fraunces","Iowan Old Style",Georgia,serif;
+  --f-body:"Public Sans","Helvetica Neue",Arial,sans-serif;
+  --f-data:"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+
+  --step-0:0.8125rem;
+  --step-1:0.9375rem;
+  --step-2:1.125rem;
+  --step-3:1.5rem;
+  --step-4:2.25rem;
+  --step-5:3rem;
+
+  --gap:1.25rem;
+  --pad:1.125rem;
+}
+
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#14161C;
+    --surface:#1B1E26;
+    --sunken:#22262F;
+    --ink:#E9E8E2;
+    --muted:#989EAE;
+    --faint:#6B7183;
+    --rule:#2C313D;
+    --rule-soft:#242832;
+    --accent:#8AA3EC;
+    --accent-soft:#242C42;
+    --marker:#D9A94E;
+    --good:#66AB7C;
+    --crit:#D2705F;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14161C;
+  --surface:#1B1E26;
+  --sunken:#22262F;
+  --ink:#E9E8E2;
+  --muted:#989EAE;
+  --faint:#6B7183;
+  --rule:#2C313D;
+  --rule-soft:#242832;
+  --accent:#8AA3EC;
+  --accent-soft:#242C42;
+  --marker:#D9A94E;
+  --good:#66AB7C;
+  --crit:#D2705F;
+}
+
+*{box-sizing:border-box}
+
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--f-body);
+  font-size:var(--step-1);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+
+.shell{
+  max-width:1180px;
+  margin:0 auto;
+  padding:2.25rem 1.5rem 4rem;
+}
+
+/* ---------- instrument band ---------- */
+
+.band{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:2rem;
+  flex-wrap:wrap;
+  padding-bottom:1.25rem;
+  border-bottom:1px solid var(--rule);
+}
+.band-l{min-width:0}
+.eyebrow{
+  font-family:var(--f-data);
+  font-size:0.6875rem;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--faint);
+  margin:0 0 0.4rem;
+}
+.greeting{
+  font-family:var(--f-display);
+  font-optical-sizing:auto;
+  font-weight:600;
+  font-size:var(--step-4);
+  line-height:1.06;
+  letter-spacing:-0.015em;
+  margin:0;
+  text-wrap:balance;
+}
+.greeting em{
+  font-style:italic;
+  font-weight:400;
+  color:var(--accent);
+}
+.band-r{
+  text-align:right;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:0.15rem;
+}
+.clock{
+  font-family:var(--f-data);
+  font-size:var(--step-5);
+  font-weight:500;
+  line-height:1;
+  letter-spacing:-0.03em;
+  font-variant-numeric:tabular-nums;
+  display:flex;
+  align-items:baseline;
+  gap:0.1em;
+}
+.clock .sec{
+  font-size:0.4em;
+  color:var(--marker);
+  letter-spacing:0;
+  padding-left:0.15em;
+}
+.datum{
+  font-family:var(--f-data);
+  font-size:var(--step-0);
+  color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+
+/* ---------- stat strip ---------- */
+
+.strip{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  border-bottom:1px solid var(--rule);
+  margin-bottom:2rem;
+}
+.stat{
+  padding:1.1rem 1.25rem 1.15rem;
+  border-left:1px solid var(--rule-soft);
+}
+.stat:first-child{border-left:0;padding-left:0}
+.stat-k{
+  font-family:var(--f-data);
+  font-size:0.625rem;
+  letter-spacing:0.13em;
+  text-transform:uppercase;
+  color:var(--faint);
+  display:block;
+  margin-bottom:0.4rem;
+}
+.stat-v{
+  font-family:var(--f-display);
+  font-weight:600;
+  font-size:var(--step-3);
+  line-height:1.1;
+  font-variant-numeric:tabular-nums;
+  display:block;
+}
+.stat-v small{
+  font-family:var(--f-body);
+  font-size:var(--step-0);
+  font-weight:500;
+  color:var(--muted);
+  margin-left:0.3rem;
+}
+
+/* ---------- grid ---------- */
+
+.grid{
+  display:grid;
+  grid-template-columns:1.35fr 1fr;
+  gap:2.5rem;
+  align-items:start;
+}
+.col{
+  display:flex;
+  flex-direction:column;
+  gap:2.25rem;
+  min-width:0;
+}
+
+.panel{min-width:0}
+.panel-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:1rem;
+  padding-bottom:0.55rem;
+  border-bottom:1px solid var(--rule);
+  margin-bottom:0.9rem;
+}
+.panel-title{
+  font-family:var(--f-display);
+  font-weight:600;
+  font-size:var(--step-2);
+  letter-spacing:-0.01em;
+  margin:0;
+}
+.panel-note{
+  font-family:var(--f-data);
+  font-size:0.6875rem;
+  color:var(--faint);
+  letter-spacing:0.04em;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+
+/* ---------- tasks ---------- */
+
+.tasks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.task{
+  display:flex;
+  align-items:flex-start;
+  gap:0.7rem;
+  padding:0.6rem 0.15rem;
+  border-bottom:1px solid var(--rule-soft);
+}
+.task:last-child{border-bottom:0}
+.box{
+  appearance:none;
+  flex:0 0 auto;
+  width:1.05rem;
+  height:1.05rem;
+  margin:0.16rem 0 0;
+  border:1.5px solid var(--faint);
+  border-radius:3px;
+  background:transparent;
+  cursor:pointer;
+  display:grid;
+  place-content:center;
+  transition:border-color .12s,background .12s;
+}
+.box:hover{border-color:var(--accent)}
+.box::after{
+  content:"";
+  width:0.55rem;
+  height:0.3rem;
+  border-left:2px solid var(--surface);
+  border-bottom:2px solid var(--surface);
+  transform:rotate(-45deg) translate(1px,-1px) scale(0);
+  transition:transform .12s ease-out;
+}
+.box:checked{background:var(--accent);border-color:var(--accent)}
+.box:checked::after{transform:rotate(-45deg) translate(1px,-1px) scale(1)}
+.task-text{
+  flex:1;
+  min-width:0;
+  overflow-wrap:anywhere;
+  cursor:pointer;
+}
+.task.done .task-text{color:var(--faint);text-decoration:line-through;text-decoration-thickness:1px}
+.kill{
+  flex:0 0 auto;
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:var(--faint);
+  font-family:var(--f-data);
+  font-size:1rem;
+  line-height:1;
+  padding:0.2rem 0.35rem;
+  cursor:pointer;
+  border-radius:3px;
+  opacity:0;
+  transition:opacity .12s,color .12s;
+}
+.task:hover .kill,.row:hover .kill,.kill:focus-visible{opacity:1}
+.kill:hover{color:var(--crit)}
+
+.compose{
+  display:flex;
+  gap:0.5rem;
+  margin-top:0.9rem;
+}
+input[type="text"],input[type="url"],textarea{
+  font-family:var(--f-body);
+  font-size:var(--step-1);
+  color:var(--ink);
+  background:var(--surface);
+  border:1px solid var(--rule);
+  border-radius:4px;
+  padding:0.5rem 0.65rem;
+  width:100%;
+  min-width:0;
+}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+input:focus-visible,textarea:focus-visible,button:focus-visible,.box:focus-visible,a:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}
+.btn{
+  font-family:var(--f-body);
+  font-size:var(--step-0);
+  font-weight:600;
+  letter-spacing:0.02em;
+  color:var(--surface);
+  background:var(--accent);
+  border:0;
+  border-radius:4px;
+  padding:0 0.95rem;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.btn:hover{filter:brightness(1.08)}
+
+.empty{
+  font-size:var(--step-0);
+  color:var(--faint);
+  padding:0.9rem 0.15rem;
+  font-style:italic;
+}
+
+/* ---------- notes ---------- */
+
+.notes{
+  min-height:11rem;
+  resize:vertical;
+  line-height:1.65;
+  background:var(--surface);
+}
+
+/* ---------- repos ---------- */
+
+.repos{display:flex;flex-direction:column;gap:0.15rem}
+.repo{
+  display:grid;
+  grid-template-columns:3px 1fr auto;
+  gap:0 0.75rem;
+  align-items:center;
+  padding:0.6rem 0.7rem 0.6rem 0;
+  background:var(--surface);
+  border-bottom:1px solid var(--rule-soft);
+  text-decoration:none;
+  color:inherit;
+}
+.repo:last-child{border-bottom:0}
+.repo:hover{background:var(--sunken)}
+.stripe{
+  align-self:stretch;
+  background:var(--rule);
+  border-radius:2px;
+}
+.repo.fresh .stripe{background:var(--marker)}
+.repo.warm .stripe{background:var(--accent)}
+.repo-id{min-width:0}
+.repo-name{
+  font-family:var(--f-data);
+  font-size:var(--step-0);
+  font-weight:500;
+  display:block;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.repo-meta{
+  font-size:0.6875rem;
+  color:var(--faint);
+  letter-spacing:0.03em;
+}
+.repo-when{
+  font-family:var(--f-data);
+  font-size:0.6875rem;
+  color:var(--muted);
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.lock{
+  display:inline-block;
+  font-family:var(--f-data);
+  font-size:0.5625rem;
+  letter-spacing:0.09em;
+  text-transform:uppercase;
+  color:var(--muted);
+  border:1px solid var(--rule);
+  border-radius:2px;
+  padding:0.05rem 0.3rem;
+  margin-left:0.4rem;
+  vertical-align:1px;
+}
+
+/* ---------- links ---------- */
+
+.links{display:flex;flex-direction:column}
+.row{
+  display:flex;
+  align-items:center;
+  gap:0.6rem;
+  padding:0.45rem 0.15rem;
+  border-bottom:1px solid var(--rule-soft);
+}
+.row:last-child{border-bottom:0}
+.row a{
+  flex:1;
+  min-width:0;
+  color:var(--ink);
+  text-decoration:none;
+  font-size:var(--step-0);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.row a:hover{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.row .host{
+  font-family:var(--f-data);
+  font-size:0.625rem;
+  color:var(--faint);
+  white-space:nowrap;
+}
+.compose.two{display:grid;grid-template-columns:1fr 1.4fr auto;gap:0.5rem}
+
+/* ---------- sync pill ---------- */
+
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:0.4rem;
+  font-family:var(--f-data);
+  font-size:0.625rem;
+  letter-spacing:0.09em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--faint)}
+.pill[data-state="saved"] .dot{background:var(--good)}
+.pill[data-state="saving"] .dot{background:var(--marker)}
+.pill[data-state="local"] .dot{background:var(--crit)}
+
+footer{
+  margin-top:3rem;
+  padding-top:1rem;
+  border-top:1px solid var(--rule);
+  display:flex;
+  justify-content:space-between;
+  gap:1rem;
+  flex-wrap:wrap;
+  font-family:var(--f-data);
+  font-size:0.6875rem;
+  color:var(--faint);
+}
+
+@media (max-width:860px){
+  .grid{grid-template-columns:1fr;gap:2.25rem}
+  .strip{grid-template-columns:repeat(2,1fr)}
+  .stat:nth-child(3){border-left:0;padding-left:0}
+  .stat{border-top:1px solid var(--rule-soft)}
+  .stat:nth-child(1),.stat:nth-child(2){border-top:0}
+  .clock{font-size:var(--step-4)}
+  .greeting{font-size:var(--step-3)}
+  .band{align-items:flex-start}
+}
+@media (max-width:520px){
+  .compose.two{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
+</style>
+
+<div class="shell">
+
+  <header class="band">
+    <div class="band-l">
+      <p class="eyebrow" id="eyebrow">Daybook</p>
+      <h1 class="greeting" id="greeting">Good morning, <em>liferusher</em></h1>
+    </div>
+    <div class="band-r">
+      <div class="clock" id="clock" aria-live="off">
+        <span id="hm">--:--</span><span class="sec" id="ss">--</span>
+      </div>
+      <div class="datum" id="fulldate">&nbsp;</div>
+    </div>
+  </header>
+
+  <div class="strip">
+    <div class="stat">
+      <span class="stat-k">Open tasks</span>
+      <span class="stat-v" id="s-tasks">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-k">Repositories</span>
+      <span class="stat-v" id="s-repos">6<small>2 public</small></span>
+    </div>
+    <div class="stat">
+      <span class="stat-k">Open PRs</span>
+      <span class="stat-v" id="s-prs">0<small>Claude-liferusher</small></span>
+    </div>
+    <div class="stat">
+      <span class="stat-k">Last push</span>
+      <span class="stat-v" id="s-push">—</span>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <div class="col">
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Today</h2>
+          <span class="pill" id="sync" data-state="idle"><span class="dot"></span><span id="sync-label">Connecting</span></span>
+        </div>
+        <ul class="tasks" id="tasks"></ul>
+        <div class="empty" id="tasks-empty" hidden>Nothing on the list. Add the first thing below.</div>
+        <form class="compose" id="task-form">
+          <input type="text" id="task-input" placeholder="What needs doing?" autocomplete="off" aria-label="New task">
+          <button class="btn" type="submit">Add</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Scratch</h2>
+          <span class="panel-note" id="notes-note">saves as you type</span>
+        </div>
+        <textarea class="notes" id="notes" placeholder="Anything you want to keep in front of you — a snippet, a phone number, half a thought." aria-label="Scratch notes"></textarea>
+      </section>
+
+    </div>
+
+    <div class="col">
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Repositories</h2>
+          <span class="panel-note" id="snap-note">snapshot 6 Sep</span>
+        </div>
+        <div class="repos" id="repos"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Jump to</h2>
+        </div>
+        <div class="links" id="links"></div>
+        <div class="empty" id="links-empty" hidden>No links yet.</div>
+        <form class="compose two" id="link-form">
+          <input type="text" id="link-label" placeholder="Label" autocomplete="off" aria-label="Link label">
+          <input type="url" id="link-url" placeholder="https://" autocomplete="off" aria-label="Link address">
+          <button class="btn" type="submit">Add</button>
+        </form>
+      </section>
+
+    </div>
+  </div>
+
+  <footer>
+    <span>github.com/liferusher · joined April 2021</span>
+    <span id="foot-sync">Repository figures captured 6 September 2026</span>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- baked GitHub snapshot (captured 2026-09-06) ---------- */
+  var REPOS = [
+    {name:"Claude-liferusher", pushed:"2026-09-06T21:42:51Z", private:false, url:"https://github.com/liferusher/Claude-liferusher"},
+    {name:"Claude-life",       pushed:"2026-09-06T21:39:59Z", private:true,  url:"https://github.com/liferusher/Claude-life"},
+    {name:"ClaudeRNSS",        pushed:"2026-07-14T09:17:05Z", private:true,  url:"https://github.com/liferusher/ClaudeRNSS"},
+    {name:"Claude",            pushed:"2026-07-14T09:14:43Z", private:true,  url:"https://github.com/liferusher/Claude"},
+    {name:"SOSSHT",            pushed:"2025-12-15T13:33:16Z", private:true,  url:"https://github.com/liferusher/SOSSHT"},
+    {name:"ProcesmanagerRNSS", pushed:"2025-05-08T07:31:09Z", private:false, url:"https://github.com/liferusher/ProcesmanagerRNSS"}
+  ];
+
+  var $ = function(id){ return document.getElementById(id); };
+  var DAY = 86400000;
+
+  function ago(iso){
+    var d = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (d < 90) return "just now";
+    if (d < 5400) return Math.round(d/60) + "m ago";
+    if (d < 129600) return Math.round(d/3600) + "h ago";
+    if (d < 60*DAY/1000) return Math.round(d/86400) + "d ago";
+    if (d < 730*DAY/1000) return Math.round(d/2629800) + "mo ago";
+    return Math.round(d/31557600) + "y ago";
+  }
+
+  /* ---------- clock ---------- */
+
+  var MONTHS = ["January","February","March","April","May","June","July",
+                "August","September","October","November","December"];
+  var DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+  function pad(n){ return n < 10 ? "0" + n : String(n); }
+
+  function tickClock(){
+    var now = new Date();
+    $("hm").textContent = pad(now.getHours()) + ":" + pad(now.getMinutes());
+    $("ss").textContent = pad(now.getSeconds());
+    $("fulldate").textContent =
+      DAYS[now.getDay()] + ", " + now.getDate() + " " + MONTHS[now.getMonth()] + " " + now.getFullYear();
+    var h = now.getHours();
+    var part = h < 5 ? "Still up" : h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+    $("greeting").innerHTML = part + ", <em>liferusher</em>";
+    $("eyebrow").textContent = h < 5 || h >= 18 ? "Daybook · evening" : "Daybook";
+  }
+
+  /* ---------- repos ---------- */
+
+  function renderRepos(){
+    var frag = document.createDocumentFragment();
+    REPOS.forEach(function(r){
+      var age = Date.now() - new Date(r.pushed).getTime();
+      var cls = age < 7*DAY ? "fresh" : age < 60*DAY ? "warm" : "";
+      var a = document.createElement("a");
+      a.className = "repo " + cls;
+      a.href = r.url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.innerHTML =
+        '<span class="stripe"></span>' +
+        '<span class="repo-id">' +
+          '<span class="repo-name"></span>' +
+          '<span class="repo-meta">' + (r.private ? "private" : "public") + '</span>' +
+        '</span>' +
+        '<span class="repo-when">' + ago(r.pushed) + '</span>';
+      a.querySelector(".repo-name").textContent = r.name;
+      frag.appendChild(a);
+    });
+    $("repos").innerHTML = "";
+    $("repos").appendChild(frag);
+    $("s-push").innerHTML = "";
+    $("s-push").appendChild(document.createTextNode(ago(REPOS[0].pushed)));
+    var small = document.createElement("small");
+    small.textContent = REPOS[0].name;
+    $("s-push").appendChild(small);
+  }
+
+  /* ---------- storage: db capability, localStorage fallback ---------- */
+
+  var db = null, local = false;
+  var state = { tasks: [], links: [], notes: "" };
+
+  function setSync(st, label){
+    $("sync").setAttribute("data-state", st);
+    $("sync-label").textContent = label;
+  }
+
+  function lsGet(k, fallback){
+    try { var v = localStorage.getItem("daybook:" + k); return v ? JSON.parse(v) : fallback; }
+    catch(e){ return fallback; }
+  }
+  function lsSet(k, v){
+    try { localStorage.setItem("daybook:" + k, JSON.stringify(v)); } catch(e){}
+  }
+
+  var writeTimers = {};
+  function save(key){
+    lsSet(key, state[key]);
+    if (!db) return;
+    setSync("saving", "Saving");
+    clearTimeout(writeTimers[key]);
+    writeTimers[key] = setTimeout(function(){
+      var body = key === "notes" ? { text: state.notes } : { items: state[key] };
+      db.doc("dash/" + key).set(body).then(function(){
+        setSync("saved", "Saved");
+      }, function(err){
+        setSync("local", err && err.code === "quota_exceeded" ? "Store full" : "Local only");
+      });
+    }, 400);
+  }
+
+  function uid(){
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  /* ---------- tasks ---------- */
+
+  function renderTasks(){
+    var list = $("tasks");
+    list.innerHTML = "";
+    state.tasks.forEach(function(t){
+      var li = document.createElement("li");
+      li.className = "task" + (t.done ? " done" : "");
+
+      var cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.className = "box";
+      cb.checked = !!t.done;
+      cb.setAttribute("aria-label", t.text);
+      cb.addEventListener("change", function(){
+        t.done = cb.checked;
+        renderTasks();
+        save("tasks");
+      });
+
+      var span = document.createElement("span");
+      span.className = "task-text";
+      span.textContent = t.text;
+      span.addEventListener("click", function(){ cb.click(); });
+
+      var del = document.createElement("button");
+      del.className = "kill";
+      del.type = "button";
+      del.innerHTML = "&times;";
+      del.setAttribute("aria-label", "Delete task: " + t.text);
+      del.addEventListener("click", function(){
+        state.tasks = state.tasks.filter(function(x){ return x.id !== t.id; });
+        renderTasks();
+        save("tasks");
+      });
+
+      li.appendChild(cb); li.appendChild(span); li.appendChild(del);
+      list.appendChild(li);
+    });
+    $("tasks-empty").hidden = state.tasks.length > 0;
+    var open = state.tasks.filter(function(t){ return !t.done; }).length;
+    $("s-tasks").innerHTML = "";
+    $("s-tasks").appendChild(document.createTextNode(String(open)));
+    if (state.tasks.length){
+      var small = document.createElement("small");
+      small.textContent = "of " + state.tasks.length;
+      $("s-tasks").appendChild(small);
+    }
+  }
+
+  $("task-form").addEventListener("submit", function(e){
+    e.preventDefault();
+    var v = $("task-input").value.trim();
+    if (!v) return;
+    state.tasks.push({ id: uid(), text: v.slice(0, 280), done: false, ts: Date.now() });
+    $("task-input").value = "";
+    renderTasks();
+    save("tasks");
+  });
+
+  /* ---------- links ---------- */
+
+  function hostOf(url){
+    try { return new URL(url).hostname.replace(/^www\./, ""); }
+    catch(e){ return ""; }
+  }
+
+  function renderLinks(){
+    var wrap = $("links");
+    wrap.innerHTML = "";
+    state.links.forEach(function(l){
+      var row = document.createElement("div");
+      row.className = "row";
+
+      var a = document.createElement("a");
+      a.href = l.url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = l.label;
+
+      var host = document.createElement("span");
+      host.className = "host";
+      host.textContent = hostOf(l.url);
+
+      var del = document.createElement("button");
+      del.className = "kill";
+      del.type = "button";
+      del.innerHTML = "&times;";
+      del.setAttribute("aria-label", "Remove link: " + l.label);
+      del.addEventListener("click", function(){
+        state.links = state.links.filter(function(x){ return x.id !== l.id; });
+        renderLinks();
+        save("links");
+      });
+
+      row.appendChild(a); row.appendChild(host); row.appendChild(del);
+      wrap.appendChild(row);
+    });
+    $("links-empty").hidden = state.links.length > 0;
+  }
+
+  $("link-form").addEventListener("submit", function(e){
+    e.preventDefault();
+    var label = $("link-label").value.trim();
+    var url = $("link-url").value.trim();
+    if (!label || !url) return;
+    if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+    state.links.push({ id: uid(), label: label.slice(0, 60), url: url });
+    $("link-label").value = "";
+    $("link-url").value = "";
+    renderLinks();
+    save("links");
+  });
+
+  /* ---------- notes ---------- */
+
+  var notesEl = $("notes");
+  var notesTimer;
+  notesEl.addEventListener("input", function(){
+    state.notes = notesEl.value;
+    $("notes-note").textContent = "saving…";
+    clearTimeout(notesTimer);
+    notesTimer = setTimeout(function(){
+      save("notes");
+      $("notes-note").textContent = "saved " + new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    }, 600);
+  });
+
+  /* ---------- boot ---------- */
+
+  tickClock();
+  setInterval(tickClock, 1000);
+  renderRepos();
+  setInterval(renderRepos, 60000);
+
+  // Render immediately from local cache so the page is never an empty shell.
+  state.tasks = lsGet("tasks", []);
+  state.links = lsGet("links", []);
+  state.notes = lsGet("notes", "");
+  notesEl.value = state.notes;
+  renderTasks();
+  renderLinks();
+
+  if (!window.claude || !window.claude.use){
+    local = true;
+    setSync("local", "This device only");
+  } else {
+    setSync("idle", "Connecting");
+    window.claude.use("db").then(function(ns){
+      if (!ns){
+        local = true;
+        setSync("local", "This device only");
+        return;
+      }
+      db = ns;
+      var seen = 0;
+      function onDoc(key, apply){
+        db.doc("dash/" + key).onSnapshot(function(snap){
+          if (snap.exists){
+            apply(snap.data());
+            lsSet(key, state[key]);
+          }
+          if (++seen >= 1) setSync("saved", "Saved");
+        }, function(){
+          setSync("local", "This device only");
+        });
+      }
+      onDoc("tasks", function(d){
+        state.tasks = Array.isArray(d.items) ? d.items : [];
+        renderTasks();
+      });
+      onDoc("links", function(d){
+        state.links = Array.isArray(d.items) ? d.items : [];
+        renderLinks();
+      });
+      onDoc("notes", function(d){
+        state.notes = typeof d.text === "string" ? d.text : "";
+        if (document.activeElement !== notesEl) notesEl.value = state.notes;
+      });
+    }, function(){
+      local = true;
+      setSync("local", "This device only");
+    });
+  }
+})();
+</script>
