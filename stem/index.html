@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Live Pitch</title>
+<meta name="description" content="Live pitch graph for voice practice, with a target band.">
+<meta name="theme-color" content="#F2F4F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11141A" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one phone-first column that still works in half a screen (split screen):
+   title and Start on top, the big reading, the graph, mic level, then the target. */
+:root{
+  --bg:#F2F4F7; --surface:#FFFFFF; --ink:#1B2230; --muted:#5B6577; --line:#DCE1E9;
+  --res:#7448B5; --good:#2C7A4B; --good-soft:#E1F2E7; --warn:#9A5F14; --on-ink:#FFFFFF;
+  --font-body:"Atkinson Hyperlegible","Segoe UI",system-ui,-apple-system,sans-serif;
+  --font-mono:"DM Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#11141A; --surface:#191E27; --ink:#E7EBF2; --muted:#9AA4B5; --line:#2A313E;
+    --res:#B391EE; --good:#5BC489; --good-soft:#173322; --warn:#E2A24F; --on-ink:#11141A;
+    color-scheme:dark;
+  }
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.5;
+  padding-top:calc(12px + env(safe-area-inset-top, 0px));padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
+}
+[hidden]{display:none!important}
+.wrap{max-width:44rem;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+p{margin:0}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--res);outline-offset:2px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.brand svg{width:24px;height:18px;flex:none}
+.brand .staff{stroke:var(--line);stroke-width:1.2;fill:none}
+.brand .line{stroke:var(--res);stroke-width:2.2;fill:none;stroke-linecap:round}
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--on-ink);border-radius:12px;padding:8px 22px;min-height:44px;font-weight:700;cursor:pointer}
+.btn.running{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.btn:disabled{opacity:.6;cursor:default}
+.read{display:flex;align-items:baseline;gap:2px 12px;flex-wrap:wrap}
+.read b{font-family:var(--font-mono);font-weight:500;font-size:clamp(2.2rem, 11vw, 3.4rem);line-height:1.05;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.read b.on{color:var(--good)}
+.read span{color:var(--muted);font-size:15px}
+canvas{display:block;width:100%;height:clamp(170px, 42vh, 440px);border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:6px 16px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.meter{display:flex;align-items:center;gap:8px;flex:1 1 9rem;min-width:0}
+.meter div{flex:1;height:8px;border-radius:999px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;width:100%;background:var(--res);transform-origin:left center;transform:scaleX(0)}
+.stat{font-variant-numeric:tabular-nums}
+.msg{font-size:14px;color:var(--warn)}
+.target{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.lab{font-family:var(--font-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pitch{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:12px;padding:3px}
+.pitch button{border:0;background:transparent;min-width:40px;height:40px;border-radius:9px;cursor:pointer;font-size:18px;display:inline-flex;align-items:center;justify-content:center}
+.pitch button:disabled{opacity:.35;cursor:default}
+.pitch .play{color:var(--res)}
+.pitch .play svg{width:14px;height:14px;fill:currentColor}
+.pv{font-family:var(--font-mono);font-size:14px;padding:0 6px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.small{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <p class="brand"><svg viewBox="0 0 24 18" aria-hidden="true"><path class="staff" d="M1 3h22M1 9h22M1 15h22"/><path class="line" d="M2 4 C7 4, 8 12, 12 12 S18 10, 22 3"/></svg><span>Live pitch</span></p>
+    <button class="btn" id="toggle" type="button">Start</button>
+  </header>
+
+  <p class="read" aria-live="off"><b id="hz">– Hz</b><span id="note">Tap Start, then talk or hum.</span></p>
+  <canvas id="graph" role="img" aria-label="Your pitch over the last 10 seconds, with your target band"></canvas>
+
+  <div class="row">
+    <div class="meter" aria-hidden="true"><span>Mic</span><div><i id="level"></i></div></div>
+    <span class="stat" id="stat"></span>
+  </div>
+  <p class="msg" id="msg" role="status"></p>
+
+  <section class="target" aria-label="Your target">
+    <span class="lab">Target</span>
+    <div class="pitch" role="group" aria-label="Target pitch">
+      <button id="down" type="button" aria-label="One step lower">−</button>
+      <span class="pv" id="pv">F♯3 · 185 Hz</span>
+      <button id="up" type="button" aria-label="One step higher">+</button>
+      <button id="tone" class="play" type="button" aria-label="Play the target tone"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9.5-5.5z"/></svg></button>
+    </div>
+  </section>
+  <p class="small">The green band is within one step of your target. Nothing is recorded or saved: the microphone is only on while the graph is running.</p>
+</main>
+
+<script>
+(function(){
+'use strict';
+function $(id){ return document.getElementById(id); }
+function mod(a, n){ return ((a % n) + n) % n; }
+var NOTE = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+function noteName(m){ return NOTE[mod(m, 12)] + (Math.floor(m / 12) - 1); }
+function hzOf(m){ return 440 * Math.pow(2, (m - 69) / 12); }
+function midiOf(f){ return Math.round(69 + 12 * Math.log2(f / 440)); }
+
+/* ---------- target pitch ---------- */
+var MIN = 45, MAX = 64, KEY = 'live-pitch-target', WINDOW = 10, STATS = 30;
+var target = 54;
+try { var saved = parseInt(localStorage.getItem(KEY), 10); if (saved >= MIN && saved <= MAX) target = saved; } catch (e) {}
+function band(){ var t = hzOf(target); return { t: t, lo: t / Math.pow(2, 1 / 12), hi: t * Math.pow(2, 1 / 12) }; }
+function setTarget(m){
+  target = Math.max(MIN, Math.min(MAX, m));
+  try { localStorage.setItem(KEY, String(target)); } catch (e) {}
+  $('pv').textContent = noteName(target) + ' · ' + Math.round(hzOf(target)) + ' Hz';
+  $('down').disabled = target <= MIN;
+  $('up').disabled = target >= MAX;
+  draw(L.on ? (performance.now() - L.t0) / 1000 : 0);
+}
+function readHash(){
+  var hz = parseFloat(decodeURIComponent(location.hash.slice(1)));
+  if (hz >= 80 && hz <= 600) setTarget(midiOf(hz));
+}
+
+/* ---------- pitch detection (YIN) ---------- */
+function yin(x, st, W, tauMin, tauMax, sr, d, cm){
+  var tau, j, s, v;
+  for (tau = 1; tau <= tauMax; tau++){
+    s = 0;
+    for (j = 0; j < W; j++){ v = x[st + j] - x[st + j + tau]; s += v * v; }
+    d[tau] = s;
+  }
+  var run = 0;
+  cm[0] = 1;
+  for (tau = 1; tau <= tauMax; tau++){ run += d[tau]; cm[tau] = run > 0 ? d[tau] * tau / run : 1; }
+  var est = -1;
+  for (tau = tauMin; tau < tauMax; tau++){
+    if (cm[tau] < 0.15){ while (tau + 1 < tauMax && cm[tau + 1] < cm[tau]) tau++; est = tau; break; }
+  }
+  if (est < 1) return 0;
+  var a0 = cm[est - 1], a1 = cm[est], a2 = cm[est + 1], den = a0 + a2 - 2 * a1, b = est;
+  if (den > 0) b = est + 0.5 * (a0 - a2) / den;
+  var f = sr / b;
+  return f >= 55 && f <= 520 ? f : 0;
+}
+
+/* ---------- microphone ---------- */
+var L = { on: false, hist: [] }, wake = null;
+function msg(t){ $('msg').textContent = t || ''; }
+function wakeOn(){ try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function(w){ wake = w; }).catch(function(){}); } catch (e) {} }
+function wakeOff(){ try { if (wake) wake.release(); } catch (e) {} wake = null; }
+function ui(on){
+  var b = $('toggle');
+  b.textContent = on ? 'Stop' : 'Start';
+  b.classList.toggle('running', on);
+  if (!on){
+    $('level').style.transform = 'scaleX(0)';
+    $('hz').textContent = '– Hz';
+    $('hz').classList.remove('on');
+    $('note').textContent = 'Tap Start, then talk or hum.';
+  }
+}
+function start(){
+  if (L.on) return;
+  var AC = window.AudioContext || window.webkitAudioContext;
+  if (!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    msg('The microphone only works when this page is opened from its web address.');
+    return;
+  }
+  if (!AC){ msg('Live pitch doesn’t work in this browser.'); return; }
+  var ctx;
+  try { ctx = new AC(); } catch (e) { msg('Sound couldn’t start in this browser.'); return; }
+  if (ctx.state === 'suspended'){ try { ctx.resume(); } catch (e) {} }
+  msg('Asking for the microphone…');
+  $('toggle').disabled = true;
+  navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true } }).then(function(stream){
+    if (ctx.state === 'suspended'){ try { ctx.resume(); } catch (e) {} }
+    var an = ctx.createAnalyser(), mute = ctx.createGain();
+    an.fftSize = 4096;
+    mute.gain.value = 0;
+    ctx.createMediaStreamSource(stream).connect(an);
+    an.connect(mute);
+    mute.connect(ctx.destination);
+    var k = Math.max(1, Math.round(ctx.sampleRate / 8000)), m = Math.floor(an.fftSize / k), sr = ctx.sampleRate / k;
+    var tauMax = Math.ceil(sr / 60), W = Math.min(Math.round(sr * 0.04), m - tauMax - 3);
+    L = { on: true, stream: stream, ctx: ctx, an: an, k: k, sr: sr, W: W, tauMin: Math.max(2, Math.floor(sr / 500)), tauMax: tauMax,
+      buf: new Float32Array(an.fftSize), x: new Float32Array(m), d: new Float64Array(tauMax + 2), cm: new Float64Array(tauMax + 2),
+      hist: [], raw: [], t0: performance.now(), last: 0, lastStat: 0, held: null, peak: 0, lastSound: 0, lastPitch: 0 };
+    var track = stream.getAudioTracks()[0];
+    if (track) track.onended = function(){ if (L.on){ stop(); msg('Another app took the microphone. Close it and tap Start again.'); } };
+    wakeOn();
+    ui(true);
+    msg('');
+    L.raf = requestAnimationFrame(loop);
+  }).catch(function(err){
+    try { ctx.close(); } catch (e) {}
+    var n = err && err.name;
+    msg(n === 'NotAllowedError' ? 'The microphone is blocked for this page. Tap the icon left of the web address, open Permissions, allow Microphone, then tap Start.'
+      : n === 'NotReadableError' ? 'The microphone is busy. Close other apps that use it, like your other pitch app, then tap Start.'
+      : n === 'NotFoundError' ? 'No microphone was found.'
+      : 'The microphone couldn’t start' + (n ? ' (' + n + ')' : '') + '.');
+  }).then(function(){ $('toggle').disabled = false; });
+}
+function stop(){
+  if (!L.on) return;
+  L.on = false;
+  cancelAnimationFrame(L.raf);
+  try { L.stream.getTracks().forEach(function(t){ t.stop(); }); } catch (e) {}
+  try { L.ctx.close(); } catch (e) {}
+  wakeOff();
+  ui(false);
+}
+function loop(ts){
+  if (!L.on) return;
+  L.raf = requestAnimationFrame(loop);
+  if (ts - L.last < 33) return;
+  L.last = ts;
+  L.an.getFloatTimeDomainData(L.buf);
+  var k = L.k, x = L.x, m = x.length, e = 0, j, q, s;
+  for (j = 0; j < m; j++){ s = 0; for (q = 0; q < k; q++) s += L.buf[j * k + q]; x[j] = s / k; e += x[j] * x[j]; }
+  var rms = Math.sqrt(e / m);
+  L.peak = Math.max(L.peak * 0.995, rms);
+  var f = rms > Math.max(0.0015, L.peak * 0.08) ? yin(x, m - L.W - L.tauMax - 2, L.W, L.tauMin, L.tauMax, L.sr, L.d, L.cm) : 0;
+  L.raw.push(f); if (L.raw.length > 3) L.raw.shift();
+  var v = L.raw.filter(Boolean).sort(function(a, b){ return a - b; });
+  var fs = f && v.length ? v[Math.floor(v.length / 2)] : 0;
+  var t = (ts - L.t0) / 1000;
+  var level = Math.max(0, Math.min(1, (20 * Math.log10(rms + 1e-9) + 60) / 60));
+  $('level').style.transform = 'scaleX(' + level.toFixed(3) + ')';
+  if (level > 0.25) L.lastSound = t;
+  if (fs){ L.held = { t: t, f: fs }; L.lastPitch = t; }
+  L.hist.push([t, fs]);
+  while (L.hist.length && L.hist[0][0] < t - STATS) L.hist.shift();
+  readout(t);
+  if (ts - L.lastStat > 500){ L.lastStat = ts; stats(); }
+  msg(L.ctx.state !== 'running' ? 'The browser paused the sound. Tap Stop, then Start again.'
+    : t > 3 && t - L.lastSound > 3 ? 'No sound is coming in from the microphone.'
+    : t > 3 && t - L.lastPitch > 3 ? 'Hearing sound, but no clear note yet. Try a long mmm.'
+    : '');
+  draw(t);
+}
+function readout(t){
+  var cur = L.held && t - L.held.t < 0.4 ? L.held.f : 0, b = band(), hz = $('hz');
+  if (cur){
+    hz.textContent = Math.round(cur) + ' Hz';
+    hz.classList.toggle('on', cur >= b.lo && cur <= b.hi);
+    $('note').textContent = 'about ' + noteName(midiOf(cur));
+  } else {
+    hz.textContent = '– Hz';
+    hz.classList.remove('on');
+    $('note').textContent = 'listening…';
+  }
+}
+function stats(){
+  var b = band(), voiced = [], inBand = 0;
+  L.hist.forEach(function(p){ if (p[1]){ voiced.push(p[1]); if (p[1] >= b.lo && p[1] <= b.hi) inBand++; } });
+  if (voiced.length < 15){ $('stat').textContent = ''; return; }
+  voiced.sort(function(a, c){ return a - c; });
+  $('stat').textContent = 'On target ' + Math.round(inBand * 100 / voiced.length) + '% · middle ' + Math.round(voiced[voiced.length >> 1]) + ' Hz (last 30 s)';
+}
+
+/* ---------- graph ---------- */
+var C = {};
+function readColors(){
+  var cs = getComputedStyle(document.documentElement);
+  ['--ink', '--muted', '--line', '--res', '--good', '--good-soft'].forEach(function(n){ C[n] = cs.getPropertyValue(n).trim(); });
+}
+function draw(now){
+  var cv = $('graph');
+  var w = cv.clientWidth || 320, h = cv.clientHeight || 220, dpr = window.devicePixelRatio || 1;
+  var pw = Math.round(w * dpr), ph = Math.round(h * dpr);
+  if (cv.width !== pw || cv.height !== ph){ cv.width = pw; cv.height = ph; }
+  var g = cv.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  var b = band(), yMin = 70, yMax = Math.max(300, Math.ceil(b.t * 1.4 / 50) * 50);
+  var Lp = 54, Rp = 12, Tp = 12, Bp = 22, iw = w - Lp - Rp, ih = h - Tp - Bp;
+  function Y(f){ return Tp + (1 - (Math.min(yMax, Math.max(yMin, f)) - yMin) / (yMax - yMin)) * ih; }
+  g.font = '11px "DM Mono", ui-monospace, monospace';
+  g.lineWidth = 1;
+  g.fillStyle = C['--good-soft'];
+  g.fillRect(Lp, Y(b.hi), iw, Y(b.lo) - Y(b.hi));
+  g.strokeStyle = C['--line'];
+  g.fillStyle = C['--muted'];
+  for (var f = Math.ceil(yMin / 50) * 50; f <= yMax; f += 50){
+    var y = Math.round(Y(f)) + 0.5;
+    g.beginPath(); g.moveTo(Lp, y); g.lineTo(Lp + iw, y); g.stroke();
+    g.fillText(f + ' Hz', 6, y + 4);
+  }
+  g.fillText('last 10 seconds', Lp, h - 6);
+  var ty = Math.round(Y(b.t)) + 0.5;
+  g.strokeStyle = C['--good'];
+  g.setLineDash([5, 4]); g.beginPath(); g.moveTo(Lp, ty); g.lineTo(Lp + iw, ty); g.stroke(); g.setLineDash([]);
+  g.fillStyle = C['--good'];
+  g.fillText('target ' + noteName(target) + ' · ' + Math.round(b.t) + ' Hz', Lp + 6, Y(b.hi) - 5);
+  if (!L.on) return;
+  var x0 = now - WINDOW, pen = false;
+  g.strokeStyle = C['--ink'];
+  g.lineWidth = 2.5; g.lineJoin = 'round'; g.lineCap = 'round';
+  g.beginPath();
+  L.hist.forEach(function(p){
+    if (p[0] < x0) return;
+    if (p[1]){ var px = Lp + (p[0] - x0) / WINDOW * iw, py = Y(p[1]); if (pen) g.lineTo(px, py); else { g.moveTo(px, py); pen = true; } }
+    else pen = false;
+  });
+  g.stroke();
+  var cur = L.held && now - L.held.t < 0.4 ? L.held.f : 0;
+  if (cur){
+    g.fillStyle = C['--res'];
+    g.beginPath(); g.arc(Lp + iw, Y(cur), 4.5, 0, Math.PI * 2); g.fill();
+  }
+}
+
+/* ---------- target tone ---------- */
+var toneCtx = null;
+function playTone(){
+  var AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  var ctx = L.on ? L.ctx : (toneCtx || (toneCtx = new AC()));
+  if (ctx.state === 'suspended'){ try { ctx.resume(); } catch (e) {} }
+  var secs = 2.8, t = ctx.currentTime + 0.03;
+  var osc = ctx.createOscillator(), gn = ctx.createGain();
+  var imag = new Float32Array([0, 1, 0.55, 0.33, 0.2, 0.12, 0.07, 0.04]);
+  osc.setPeriodicWave(ctx.createPeriodicWave(new Float32Array(imag.length), imag));
+  osc.frequency.setValueAtTime(hzOf(target), t);
+  gn.gain.setValueAtTime(0.0001, t);
+  gn.gain.exponentialRampToValueAtTime(0.3, t + 0.05);
+  gn.gain.setValueAtTime(0.3, t + secs - 0.7);
+  gn.gain.exponentialRampToValueAtTime(0.0001, t + secs);
+  osc.connect(gn); gn.connect(ctx.destination);
+  osc.start(t); osc.stop(t + secs + 0.05);
+}
+
+/* ---------- events ---------- */
+$('toggle').addEventListener('click', function(){ if (L.on) stop(); else start(); });
+$('down').addEventListener('click', function(){ setTarget(target - 1); playTone(); });
+$('up').addEventListener('click', function(){ setTarget(target + 1); playTone(); });
+$('tone').addEventListener('click', playTone);
+window.addEventListener('hashchange', readHash);
+document.addEventListener('visibilitychange', function(){
+  if (document.visibilityState === 'hidden' && L.on){ stop(); msg('Stopped while the page was in the background. Tap Start to go on.'); }
+});
+var rt = null;
+window.addEventListener('resize', function(){ clearTimeout(rt); rt = setTimeout(function(){ if (!L.on) draw(0); }, 120); });
+try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ readColors(); if (!L.on) draw(0); }); } catch (e) {}
+
+readColors();
+setTarget(target);
+readHash();
+})();
+</script>
+</body>
+</html>
